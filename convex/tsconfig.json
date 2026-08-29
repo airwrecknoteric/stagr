@@ -1,0 +1,17 @@
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"target": "ESNext",
+		"lib": ["ES2021", "dom"],
+		"skipLibCheck": true,
+		"allowJs": true,
+		"strict": true,
+		"noEmit": true,
+		"isolatedModules": true,
+		"noUncheckedIndexedAccess": true
+	},
+	"include": ["./**/*"],
+	"exclude": ["./_generated"]
+}
