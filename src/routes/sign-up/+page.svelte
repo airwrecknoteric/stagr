@@ -2,7 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { env } from '$env/dynamic/public';
 	import { useAuth } from 'convex-svelte';
-	import SiteHeader from '$lib/components/SiteHeader.svelte';
+	import AuthShell from '$lib/components/AuthShell.svelte';
+	import { clerkAuthAppearance } from '$lib/clerkAppearance';
 	import { t } from '$lib/i18n';
 
 	const ready = Boolean(env.PUBLIC_CLERK_PUBLISHABLE_KEY);
@@ -13,11 +14,14 @@
 	});
 </script>
 
-<SiteHeader />
-<main class="mx-auto flex min-h-[70vh] max-w-lg items-center justify-center px-4 py-12">
+<AuthShell>
 	{#if ready}
 		{#await import('svelte-clerk') then clerk}
-			<clerk.SignUp forceRedirectUrl="/app/onboarding" signInUrl="/sign-in" />
+			<clerk.SignUp
+				forceRedirectUrl="/app/onboarding"
+				signInUrl="/sign-in"
+				appearance={clerkAuthAppearance}
+			/>
 		{/await}
 	{:else}
 		<div class="rounded-3xl border border-line bg-panel p-8 text-center">
@@ -25,4 +29,4 @@
 			<p class="mt-3 text-sm text-mute">{t('clerkMissing')} Setze die Keys in <code>.env.local</code>.</p>
 		</div>
 	{/if}
-</main>
+</AuthShell>
