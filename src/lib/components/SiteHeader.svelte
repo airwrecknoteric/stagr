@@ -13,9 +13,6 @@
 	);
 	const me = useQuery(api.users.me, () => (auth.isAuthenticated ? {} : 'skip'));
 
-	const authPage = $derived(
-		page.url.pathname === '/sign-in' || page.url.pathname === '/sign-up'
-	);
 	const homeHref = $derived(auth.isAuthenticated ? '/app' : '/sign-in');
 	const links = [
 		{ href: '/app/search', label: t('navSearch') },
@@ -29,7 +26,7 @@
 		<a href={homeHref} class="font-display text-2xl font-extrabold tracking-tight">
 			stag<span class="text-acid">r</span>
 		</a>
-		{#if !authPage && auth.isAuthenticated}
+		{#if auth.isAuthenticated}
 			<nav class="hidden items-center gap-6 text-sm text-mute md:flex">
 				{#each links as link (link.href)}
 					<a
@@ -48,15 +45,7 @@
 			</nav>
 		{/if}
 		<div class="flex items-center gap-3">
-			{#if authPage}
-				{#if page.url.pathname === '/sign-in'}
-					<a href="/sign-up" class="rounded-full bg-acid px-4 py-2 text-sm font-semibold text-black"
-						>{t('getStarted')}</a
-					>
-				{:else}
-					<a href="/sign-in" class="text-sm text-mute hover:text-ink">{t('login')}</a>
-				{/if}
-			{:else if clerkReady}
+			{#if clerkReady}
 				<Show when="signed-out">
 					<SignInButton mode="redirect" forceRedirectUrl="/app">
 						<span class="text-sm text-mute hover:text-ink">{t('login')}</span>
