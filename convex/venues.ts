@@ -1,11 +1,11 @@
-import { v } from "convex/values";
-import { query } from "./_generated/server";
-import { orgMutation } from "./lib/customFunctions";
-import { encodeGeohash, slugify } from "./lib/geo";
-import { venueProfileDoc } from "./lib/validators";
+import { v } from 'convex/values';
+import { query } from './_generated/server';
+import { orgMutation } from './lib/customFunctions';
+import { encodeGeohash, slugify } from './lib/geo';
+import { publicVenueProfile } from './lib/validators';
 
 async function uniqueVenueSlug(
-	ctx: { db: import("./_generated/server").MutationCtx["db"] },
+	ctx: { db: import('./_generated/server').MutationCtx['db'] },
 	base: string
 ) {
 	const slug = slugify(base);
@@ -13,8 +13,8 @@ async function uniqueVenueSlug(
 	while (true) {
 		const candidate = n === 0 ? slug : `${slug}-${n}`;
 		const existing = await ctx.db
-			.query("venues")
-			.withIndex("by_slug", (q) => q.eq("slug", candidate))
+			.query('venues')
+			.withIndex('by_slug', (q) => q.eq('slug', candidate))
 			.unique();
 		if (!existing) return candidate;
 		n += 1;
@@ -25,15 +25,15 @@ export const getBySlug = query({
 	args: { slug: v.string() },
 	returns: v.union(
 		v.object({
-			venue: venueProfileDoc,
+			venue: publicVenueProfile,
 			photoUrls: v.array(v.string())
 		}),
 		v.null()
 	),
 	handler: async (ctx, args) => {
 		const venue = await ctx.db
-			.query("venues")
-			.withIndex("by_slug", (q) => q.eq("slug", args.slug))
+			.query('venues')
+			.withIndex('by_slug', (q) => q.eq('slug', args.slug))
 			.unique();
 		if (!venue || !venue.published) return null;
 		const photoUrls: string[] = [];
@@ -41,7 +41,25 @@ export const getBySlug = query({
 			const url = await ctx.storage.getUrl(storageId);
 			if (url) photoUrls.push(url);
 		}
-		return { venue, photoUrls };
+		return {
+			venue: {
+				_id: venue._id,
+				slug: venue.slug,
+				name: venue.name,
+				bio: venue.bio,
+				address: venue.address,
+				city: venue.city,
+				country: venue.country,
+				capacity: venue.capacity,
+				lat: venue.lat,
+				lng: venue.lng,
+				website: venue.website,
+				instagram: venue.instagram,
+				verified: venue.verified,
+				featured: venue.featured
+			},
+			photoUrls
+		};
 	}
 });
 
@@ -59,11 +77,11 @@ export const createOrUpdate = orgMutation({
 		instagram: v.optional(v.string()),
 		published: v.optional(v.boolean())
 	},
-	returns: v.id("venues"),
+	returns: v.id('venues'),
 	handler: async (ctx, args) => {
 		const org = await ctx.db.get(ctx.organizationId);
-		if (!org || org.type !== "venue") {
-			throw new Error("Nur Locations können ein Venue-Profil anlegen");
+		if (!org || org.type !== 'venue') {
+			throw new Error('Nur Locations können ein Venue-Profil anlegen');
 		}
 		const now = Date.now();
 		const geohash =
@@ -71,8 +89,8 @@ export const createOrUpdate = orgMutation({
 				? encodeGeohash(args.lat, args.lng)
 				: undefined;
 		const existing = await ctx.db
-			.query("venues")
-			.withIndex("by_org", (q) => q.eq("organizationId", ctx.organizationId))
+			.query('venues')
+			.withIndex('by_org', (q) => q.eq('organizationId', ctx.organizationId))
 			.unique();
 		const patch = {
 			name: args.name.trim(),
@@ -94,7 +112,7 @@ export const createOrUpdate = orgMutation({
 			return existing._id;
 		}
 		const slug = await uniqueVenueSlug(ctx, args.name);
-		return await ctx.db.insert("venues", {
+		return await ctx.db.insert('venues', {
 			organizationId: ctx.organizationId,
 			slug,
 			photoStorageIds: [],

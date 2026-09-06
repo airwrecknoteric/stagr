@@ -35,7 +35,9 @@
 					>
 						{link.label}
 						{#if link.href === '/app/inbox' && unread.data}
-							<span class="ml-1 rounded-full bg-hot px-1.5 text-[10px] text-white">{unread.data}</span>
+							<span class="ml-1 rounded-full bg-hot px-1.5 text-[10px] text-white"
+								>{unread.data}</span
+							>
 						{/if}
 					</a>
 				{/each}
@@ -50,7 +52,7 @@
 					<SignInButton mode="redirect" forceRedirectUrl="/app">
 						<span class="text-sm text-mute hover:text-ink">{t('login')}</span>
 					</SignInButton>
-					<SignUpButton mode="redirect" forceRedirectUrl="/app/onboarding">
+					<SignUpButton mode="redirect" forceRedirectUrl="/app">
 						<span class="rounded-full bg-acid px-4 py-2 text-sm font-semibold text-black">
 							{t('getStarted')}
 						</span>

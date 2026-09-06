@@ -1,11 +1,11 @@
-import { v } from "convex/values";
-import { query } from "./_generated/server";
-import { authedMutation, authedQuery, orgMutation } from "./lib/customFunctions";
-import { encodeGeohash, slugify } from "./lib/geo";
-import { membershipRole, organizationDoc, orgType } from "./lib/validators";
+import { v } from 'convex/values';
+import { query } from './_generated/server';
+import { onboardedMutation, onboardedQuery, orgMutation } from './lib/customFunctions';
+import { encodeGeohash, slugify } from './lib/geo';
+import { membershipRole, organizationDoc, orgType, publicOrganization } from './lib/validators';
 
 async function uniqueOrgSlug(
-	ctx: { db: import("./_generated/server").MutationCtx["db"] },
+	ctx: { db: import('./_generated/server').MutationCtx['db'] },
 	base: string
 ) {
 	const slug = slugify(base);
@@ -13,8 +13,8 @@ async function uniqueOrgSlug(
 	while (true) {
 		const candidate = n === 0 ? slug : `${slug}-${n}`;
 		const existing = await ctx.db
-			.query("organizations")
-			.withIndex("by_slug", (q) => q.eq("slug", candidate))
+			.query('organizations')
+			.withIndex('by_slug', (q) => q.eq('slug', candidate))
 			.unique();
 		if (!existing) return candidate;
 		n += 1;
@@ -22,18 +22,18 @@ async function uniqueOrgSlug(
 }
 
 const membershipWithOrg = v.object({
-	_id: v.id("memberships"),
+	_id: v.id('memberships'),
 	role: membershipRole,
 	organization: organizationDoc
 });
 
-export const mine = authedQuery({
+export const mine = onboardedQuery({
 	args: {},
 	returns: v.array(membershipWithOrg),
 	handler: async (ctx) => {
 		const memberships = await ctx.db
-			.query("memberships")
-			.withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
+			.query('memberships')
+			.withIndex('by_user', (q) => q.eq('userId', ctx.user._id))
 			.take(50);
 		const result = [];
 		for (const membership of memberships) {
@@ -52,16 +52,32 @@ export const mine = authedQuery({
 
 export const getBySlug = query({
 	args: { slug: v.string() },
-	returns: v.union(organizationDoc, v.null()),
+	returns: v.union(publicOrganization, v.null()),
 	handler: async (ctx, args) => {
-		return await ctx.db
-			.query("organizations")
-			.withIndex("by_slug", (q) => q.eq("slug", args.slug))
+		const organization = await ctx.db
+			.query('organizations')
+			.withIndex('by_slug', (q) => q.eq('slug', args.slug))
 			.unique();
+		if (!organization) return null;
+		return {
+			_id: organization._id,
+			name: organization.name,
+			slug: organization.slug,
+			type: organization.type,
+			bio: organization.bio,
+			city: organization.city,
+			country: organization.country,
+			lat: organization.lat,
+			lng: organization.lng,
+			website: organization.website,
+			instagram: organization.instagram,
+			verified: organization.verified,
+			featured: organization.featured
+		};
 	}
 });
 
-export const create = authedMutation({
+export const create = onboardedMutation({
 	args: {
 		name: v.string(),
 		type: orgType,
@@ -73,10 +89,10 @@ export const create = authedMutation({
 		website: v.optional(v.string()),
 		instagram: v.optional(v.string())
 	},
-	returns: v.id("organizations"),
+	returns: v.id('organizations'),
 	handler: async (ctx, args) => {
 		if (args.name.trim().length < 2) {
-			throw new Error("Name muss mindestens 2 Zeichen haben");
+			throw new Error('Name muss mindestens 2 Zeichen haben');
 		}
 		const now = Date.now();
 		const slug = await uniqueOrgSlug(ctx, args.name);
@@ -84,7 +100,7 @@ export const create = authedMutation({
 			args.lat !== undefined && args.lng !== undefined
 				? encodeGeohash(args.lat, args.lng)
 				: undefined;
-		const organizationId = await ctx.db.insert("organizations", {
+		const organizationId = await ctx.db.insert('organizations', {
 			name: args.name.trim(),
 			slug,
 			type: args.type,
@@ -101,15 +117,11 @@ export const create = authedMutation({
 			createdAt: now,
 			updatedAt: now
 		});
-		await ctx.db.insert("memberships", {
+		await ctx.db.insert('memberships', {
 			userId: ctx.user._id,
 			organizationId,
-			role: "owner",
+			role: 'owner',
 			createdAt: now
-		});
-		await ctx.db.patch(ctx.user._id, {
-			onboardingCompleted: true,
-			updatedAt: now
 		});
 		return organizationId;
 	}

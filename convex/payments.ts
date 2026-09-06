@@ -1,13 +1,13 @@
-import { v } from "convex/values";
-import { internalMutation } from "./_generated/server";
-import { authedQuery } from "./lib/customFunctions";
-import { paymentKind, paymentStatus } from "./lib/validators";
+import { v } from 'convex/values';
+import { internalMutation } from './_generated/server';
+import { onboardedQuery } from './lib/customFunctions';
+import { paymentKind, paymentStatus } from './lib/validators';
 
-export const listForBooking = authedQuery({
-	args: { bookingId: v.id("bookings") },
+export const listForBooking = onboardedQuery({
+	args: { bookingId: v.id('bookings') },
 	returns: v.array(
 		v.object({
-			_id: v.id("payments"),
+			_id: v.id('payments'),
 			kind: paymentKind,
 			amount: v.number(),
 			currency: v.string(),
@@ -18,17 +18,17 @@ export const listForBooking = authedQuery({
 	),
 	handler: async (ctx, args) => {
 		const booking = await ctx.db.get(args.bookingId);
-		if (!booking) throw new Error("Booking nicht gefunden");
+		if (!booking) throw new Error('Booking nicht gefunden');
 		const participant = await ctx.db
-			.query("threadParticipants")
-			.withIndex("by_thread_and_user", (q) =>
-				q.eq("threadId", booking.threadId).eq("userId", ctx.user._id)
+			.query('threadParticipants')
+			.withIndex('by_thread_and_user', (q) =>
+				q.eq('threadId', booking.threadId).eq('userId', ctx.user._id)
 			)
 			.unique();
-		if (!participant) throw new Error("Keine Berechtigung");
+		if (!participant) throw new Error('Keine Berechtigung');
 		const payments = await ctx.db
-			.query("payments")
-			.withIndex("by_booking", (q) => q.eq("bookingId", args.bookingId))
+			.query('payments')
+			.withIndex('by_booking', (q) => q.eq('bookingId', args.bookingId))
 			.take(10);
 		return payments.map((payment) => ({
 			_id: payment._id,
@@ -44,7 +44,7 @@ export const listForBooking = authedQuery({
 
 export const upsertFromStripe = internalMutation({
 	args: {
-		bookingId: v.id("bookings"),
+		bookingId: v.id('bookings'),
 		kind: paymentKind,
 		amount: v.number(),
 		currency: v.string(),
@@ -53,11 +53,11 @@ export const upsertFromStripe = internalMutation({
 		stripePaymentIntentId: v.optional(v.string()),
 		status: paymentStatus
 	},
-	returns: v.id("payments"),
+	returns: v.id('payments'),
 	handler: async (ctx, args) => {
 		const existing = await ctx.db
-			.query("payments")
-			.withIndex("by_session", (q) => q.eq("stripeCheckoutSessionId", args.stripeCheckoutSessionId))
+			.query('payments')
+			.withIndex('by_session', (q) => q.eq('stripeCheckoutSessionId', args.stripeCheckoutSessionId))
 			.unique();
 		const now = Date.now();
 		if (existing) {
@@ -68,7 +68,7 @@ export const upsertFromStripe = internalMutation({
 			});
 			return existing._id;
 		}
-		return await ctx.db.insert("payments", {
+		return await ctx.db.insert('payments', {
 			bookingId: args.bookingId,
 			kind: args.kind,
 			amount: args.amount,

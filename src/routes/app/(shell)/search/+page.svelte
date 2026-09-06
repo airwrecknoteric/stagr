@@ -78,11 +78,7 @@
 			<option value={g}>{g}</option>
 		{/each}
 	</select>
-	<input
-		bind:value={city}
-		placeholder="Stadt (optional)"
-		onblur={() => void geocodeCity()}
-	/>
+	<input bind:value={city} placeholder="Stadt (optional)" onblur={() => void geocodeCity()} />
 	<input type="number" bind:value={feeMax} placeholder="Max. Fee" />
 </div>
 

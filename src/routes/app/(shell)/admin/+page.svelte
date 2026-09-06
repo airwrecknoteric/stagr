@@ -56,12 +56,16 @@
 		<h2 class="font-display text-xl">DJs verifizieren</h2>
 		{#if pending.data}
 			{#each pending.data as dj (dj._id)}
-				<div class="mt-2 flex items-center justify-between rounded-2xl border border-line px-4 py-3">
+				<div
+					class="mt-2 flex items-center justify-between rounded-2xl border border-line px-4 py-3"
+				>
 					<a href="/dj/{dj.slug}">{dj.stageName}</a>
 					<div class="flex gap-2">
-						<Button onclick={() => verifyDj({ djProfileId: dj._id, verified: true })}>Verify</Button>
-						<Button variant="ghost" onclick={() => featureDj({ djProfileId: dj._id, featured: true })}
-							>Feature</Button
+						<Button onclick={() => verifyDj({ djProfileId: dj._id, verified: true })}>Verify</Button
+						>
+						<Button
+							variant="ghost"
+							onclick={() => featureDj({ djProfileId: dj._id, featured: true })}>Feature</Button
 						>
 					</div>
 				</div>
@@ -73,10 +77,13 @@
 		<h2 class="font-display text-xl">Organisationen</h2>
 		{#if orgs.data}
 			{#each orgs.data as org (org._id)}
-				<div class="mt-2 flex items-center justify-between rounded-2xl border border-line px-4 py-3">
+				<div
+					class="mt-2 flex items-center justify-between rounded-2xl border border-line px-4 py-3"
+				>
 					<p>{org.name} · {org.type}</p>
-					<Button variant="ghost" onclick={() => verifyOrg({ organizationId: org._id, verified: true })}
-						>Verify</Button
+					<Button
+						variant="ghost"
+						onclick={() => verifyOrg({ organizationId: org._id, verified: true })}>Verify</Button
 					>
 				</div>
 			{/each}

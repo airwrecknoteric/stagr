@@ -44,7 +44,10 @@
 	<div class="mt-6 space-y-2">
 		{#if roster.data}
 			{#each roster.data as row (row._id)}
-				<a href="/dj/{row.dj.slug}" class="flex items-center justify-between rounded-2xl border border-line px-4 py-3">
+				<a
+					href="/dj/{row.dj.slug}"
+					class="flex items-center justify-between rounded-2xl border border-line px-4 py-3"
+				>
 					<div>
 						<p>{row.dj.stageName}</p>
 						<p class="text-sm text-mute">{row.status}{row.exclusive ? ' · exclusive' : ''}</p>

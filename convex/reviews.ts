@@ -1,15 +1,15 @@
-import { v } from "convex/values";
-import { query } from "./_generated/server";
-import { authedMutation, authedQuery } from "./lib/customFunctions";
+import { v } from 'convex/values';
+import { query } from './_generated/server';
+import { onboardedMutation, onboardedQuery } from './lib/customFunctions';
 
 export const listForDj = query({
-	args: { djProfileId: v.id("djProfiles") },
+	args: { djProfileId: v.id('djProfiles') },
 	returns: v.object({
 		average: v.union(v.number(), v.null()),
 		count: v.number(),
 		items: v.array(
 			v.object({
-				_id: v.id("reviews"),
+				_id: v.id('reviews'),
 				rating: v.number(),
 				text: v.string(),
 				createdAt: v.number()
@@ -18,8 +18,8 @@ export const listForDj = query({
 	}),
 	handler: async (ctx, args) => {
 		const items = await ctx.db
-			.query("reviews")
-			.withIndex("by_dj", (q) => q.eq("toDjProfileId", args.djProfileId))
+			.query('reviews')
+			.withIndex('by_dj', (q) => q.eq('toDjProfileId', args.djProfileId))
 			.take(50);
 		const ratings = items.map((item) => item.rating);
 		const average =
@@ -37,39 +37,39 @@ export const listForDj = query({
 	}
 });
 
-export const create = authedMutation({
+export const create = onboardedMutation({
 	args: {
-		bookingId: v.id("bookings"),
+		bookingId: v.id('bookings'),
 		rating: v.number(),
 		text: v.string(),
-		target: v.union(v.literal("dj"), v.literal("organizer"))
+		target: v.union(v.literal('dj'), v.literal('organizer'))
 	},
-	returns: v.id("reviews"),
+	returns: v.id('reviews'),
 	handler: async (ctx, args) => {
 		if (args.rating < 1 || args.rating > 5) {
-			throw new Error("Bewertung muss zwischen 1 und 5 liegen");
+			throw new Error('Bewertung muss zwischen 1 und 5 liegen');
 		}
 		const booking = await ctx.db.get(args.bookingId);
-		if (!booking) throw new Error("Booking nicht gefunden");
-		if (booking.status !== "completed") {
-			throw new Error("Reviews nur nach abgeschlossenem Booking");
+		if (!booking) throw new Error('Booking nicht gefunden');
+		if (booking.status !== 'completed') {
+			throw new Error('Reviews nur nach abgeschlossenem Booking');
 		}
 		const existing = await ctx.db
-			.query("reviews")
-			.withIndex("by_booking_and_from", (q) =>
-				q.eq("bookingId", args.bookingId).eq("fromUserId", ctx.user._id)
+			.query('reviews')
+			.withIndex('by_booking_and_from', (q) =>
+				q.eq('bookingId', args.bookingId).eq('fromUserId', ctx.user._id)
 			)
 			.unique();
-		if (existing) throw new Error("Du hast bereits bewertet");
+		if (existing) throw new Error('Du hast bereits bewertet');
 
 		const dj = await ctx.db.get(booking.djProfileId);
-		if (!dj) throw new Error("DJ nicht gefunden");
+		if (!dj) throw new Error('DJ nicht gefunden');
 
-		if (args.target === "dj") {
+		if (args.target === 'dj') {
 			if (ctx.user._id !== booking.organizerUserId) {
-				throw new Error("Nur der Veranstalter kann den DJ bewerten");
+				throw new Error('Nur der Veranstalter kann den DJ bewerten');
 			}
-			return await ctx.db.insert("reviews", {
+			return await ctx.db.insert('reviews', {
 				bookingId: args.bookingId,
 				fromUserId: ctx.user._id,
 				toUserId: dj.userId,
@@ -81,9 +81,9 @@ export const create = authedMutation({
 		}
 
 		if (dj.userId !== ctx.user._id) {
-			throw new Error("Nur der DJ kann den Veranstalter bewerten");
+			throw new Error('Nur der DJ kann den Veranstalter bewerten');
 		}
-		return await ctx.db.insert("reviews", {
+		return await ctx.db.insert('reviews', {
 			bookingId: args.bookingId,
 			fromUserId: ctx.user._id,
 			toUserId: booking.organizerUserId,
@@ -95,11 +95,11 @@ export const create = authedMutation({
 	}
 });
 
-export const mineForBooking = authedQuery({
-	args: { bookingId: v.id("bookings") },
+export const mineForBooking = onboardedQuery({
+	args: { bookingId: v.id('bookings') },
 	returns: v.union(
 		v.object({
-			_id: v.id("reviews"),
+			_id: v.id('reviews'),
 			rating: v.number(),
 			text: v.string()
 		}),
@@ -107,9 +107,9 @@ export const mineForBooking = authedQuery({
 	),
 	handler: async (ctx, args) => {
 		const existing = await ctx.db
-			.query("reviews")
-			.withIndex("by_booking_and_from", (q) =>
-				q.eq("bookingId", args.bookingId).eq("fromUserId", ctx.user._id)
+			.query('reviews')
+			.withIndex('by_booking_and_from', (q) =>
+				q.eq('bookingId', args.bookingId).eq('fromUserId', ctx.user._id)
 			)
 			.unique();
 		if (!existing) return null;

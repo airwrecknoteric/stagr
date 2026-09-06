@@ -1,14 +1,19 @@
-import { v } from "convex/values";
-import { query } from "./_generated/server";
-import { authedMutation, authedQuery, orgMutation, orgQuery } from "./lib/customFunctions";
-import { notify } from "./lib/auth";
-import { djProfileDoc, organizationDoc } from "./lib/validators";
+import { v } from 'convex/values';
+import { query } from './_generated/server';
+import { onboardedMutation, onboardedQuery, orgMutation, orgQuery } from './lib/customFunctions';
+import { notify } from './lib/auth';
+import {
+	djProfileDoc,
+	organizationDoc,
+	publicDjProfile,
+	publicOrganization
+} from './lib/validators';
 
 const rosterRow = v.object({
-	_id: v.id("rosterEntries"),
+	_id: v.id('rosterEntries'),
 	exclusive: v.boolean(),
 	canNegotiate: v.boolean(),
-	status: v.union(v.literal("pending"), v.literal("active"), v.literal("ended")),
+	status: v.union(v.literal('pending'), v.literal('active'), v.literal('ended')),
 	dj: djProfileDoc,
 	avatarUrl: v.union(v.string(), v.null())
 });
@@ -17,10 +22,10 @@ export const listPublic = query({
 	args: { slug: v.string() },
 	returns: v.union(
 		v.object({
-			organization: organizationDoc,
+			organization: publicOrganization,
 			djs: v.array(
 				v.object({
-					profile: djProfileDoc,
+					profile: publicDjProfile,
 					avatarUrl: v.union(v.string(), v.null()),
 					exclusive: v.boolean()
 				})
@@ -30,15 +35,15 @@ export const listPublic = query({
 	),
 	handler: async (ctx, args) => {
 		const organization = await ctx.db
-			.query("organizations")
-			.withIndex("by_slug", (q) => q.eq("slug", args.slug))
+			.query('organizations')
+			.withIndex('by_slug', (q) => q.eq('slug', args.slug))
 			.unique();
-		if (!organization || organization.type !== "management") return null;
+		if (!organization || organization.type !== 'management') return null;
 
 		const entries = await ctx.db
-			.query("rosterEntries")
-			.withIndex("by_management_and_status", (q) =>
-				q.eq("managementId", organization._id).eq("status", "active")
+			.query('rosterEntries')
+			.withIndex('by_management_and_status', (q) =>
+				q.eq('managementId', organization._id).eq('status', 'active')
 			)
 			.take(100);
 
@@ -47,14 +52,49 @@ export const listPublic = query({
 			const profile = await ctx.db.get(entry.djProfileId);
 			if (!profile || !profile.published) continue;
 			djs.push({
-				profile,
+				profile: {
+					_id: profile._id,
+					slug: profile.slug,
+					stageName: profile.stageName,
+					bio: profile.bio,
+					genres: profile.genres,
+					feeMin: profile.feeMin,
+					feeMax: profile.feeMax,
+					currency: profile.currency,
+					city: profile.city,
+					country: profile.country,
+					lat: profile.lat,
+					lng: profile.lng,
+					soundcloud: profile.soundcloud,
+					instagram: profile.instagram,
+					mixUrl: profile.mixUrl,
+					verified: profile.verified,
+					featured: profile.featured
+				},
 				avatarUrl: profile.avatarStorageId
 					? await ctx.storage.getUrl(profile.avatarStorageId)
 					: null,
 				exclusive: entry.exclusive
 			});
 		}
-		return { organization, djs };
+		return {
+			organization: {
+				_id: organization._id,
+				name: organization.name,
+				slug: organization.slug,
+				type: organization.type,
+				bio: organization.bio,
+				city: organization.city,
+				country: organization.country,
+				lat: organization.lat,
+				lng: organization.lng,
+				website: organization.website,
+				instagram: organization.instagram,
+				verified: organization.verified,
+				featured: organization.featured
+			},
+			djs
+		};
 	}
 });
 
@@ -63,8 +103,8 @@ export const mine = orgQuery({
 	returns: v.array(rosterRow),
 	handler: async (ctx) => {
 		const entries = await ctx.db
-			.query("rosterEntries")
-			.withIndex("by_management", (q) => q.eq("managementId", ctx.organizationId))
+			.query('rosterEntries')
+			.withIndex('by_management', (q) => q.eq('managementId', ctx.organizationId))
 			.take(100);
 		const rows = [];
 		for (const entry of entries) {
@@ -89,79 +129,79 @@ export const inviteBySlug = orgMutation({
 		exclusive: v.boolean(),
 		canNegotiate: v.boolean()
 	},
-	returns: v.id("rosterEntries"),
+	returns: v.id('rosterEntries'),
 	handler: async (ctx, args) => {
 		const org = await ctx.db.get(ctx.organizationId);
-		if (!org || org.type !== "management") {
-			throw new Error("Nur Managements können ein Roster führen");
+		if (!org || org.type !== 'management') {
+			throw new Error('Nur Managements können ein Roster führen');
 		}
 		const dj = await ctx.db
-			.query("djProfiles")
-			.withIndex("by_slug", (q) => q.eq("slug", args.djSlug.trim().toLowerCase()))
+			.query('djProfiles')
+			.withIndex('by_slug', (q) => q.eq('slug', args.djSlug.trim().toLowerCase()))
 			.unique();
-		if (!dj) throw new Error("DJ nicht gefunden");
+		if (!dj) throw new Error('DJ nicht gefunden');
 
 		const existing = await ctx.db
-			.query("rosterEntries")
-			.withIndex("by_management_and_dj", (q) =>
-				q.eq("managementId", ctx.organizationId).eq("djProfileId", dj._id)
+			.query('rosterEntries')
+			.withIndex('by_management_and_dj', (q) =>
+				q.eq('managementId', ctx.organizationId).eq('djProfileId', dj._id)
 			)
 			.unique();
 		if (existing) {
 			await ctx.db.patch(existing._id, {
 				exclusive: args.exclusive,
 				canNegotiate: args.canNegotiate,
-				status: "pending"
+				status: 'pending'
 			});
 			await notify(
 				ctx,
 				dj.userId,
-				"Roster-Einladung",
+				'Roster-Einladung',
 				`${org.name} möchte dich ins Roster aufnehmen.`,
-				"/app/settings"
+				'/app/settings'
 			);
 			return existing._id;
 		}
 
-		const id = await ctx.db.insert("rosterEntries", {
+		const id = await ctx.db.insert('rosterEntries', {
 			managementId: ctx.organizationId,
 			djProfileId: dj._id,
 			exclusive: args.exclusive,
 			canNegotiate: args.canNegotiate,
-			status: "pending",
+			status: 'pending',
 			createdAt: Date.now()
 		});
 		await notify(
 			ctx,
 			dj.userId,
-			"Roster-Einladung",
+			'Roster-Einladung',
 			`${org.name} möchte dich ins Roster aufnehmen.`,
-			"/app/settings"
+			'/app/settings'
 		);
 		return id;
 	}
 });
 
-export const myInvites = authedQuery({
+export const myInvites = onboardedQuery({
 	args: {},
 	returns: v.array(
 		v.object({
-			_id: v.id("rosterEntries"),
+			_id: v.id('rosterEntries'),
 			exclusive: v.boolean(),
 			canNegotiate: v.boolean(),
-			status: v.union(v.literal("pending"), v.literal("active"), v.literal("ended")),
+			status: v.union(v.literal('pending'), v.literal('active'), v.literal('ended')),
 			organization: organizationDoc
 		})
 	),
 	handler: async (ctx) => {
 		const profile = await ctx.db
-			.query("djProfiles")
-			.withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
+			.query('djProfiles')
+			.withIndex('by_user', (q) => q.eq('userId', ctx.user._id))
 			.unique();
 		if (!profile) return [];
 		const entries = await ctx.db
-			.query("rosterEntries")
-			.withIndex("by_dj", (q) => q.eq("djProfileId", profile._id))
+			.query('rosterEntries')
+			.withIndex('by_dj', (q) => q.eq('djProfileId', profile._id))
 			.take(50);
 		const result = [];
 		for (const entry of entries) {
@@ -180,36 +220,36 @@ export const myInvites = authedQuery({
 	}
 });
 
-export const respond = authedMutation({
+export const respond = onboardedMutation({
 	args: {
-		entryId: v.id("rosterEntries"),
+		entryId: v.id('rosterEntries'),
 		accept: v.boolean()
 	},
 	returns: v.null(),
 	handler: async (ctx, args) => {
 		const entry = await ctx.db.get(args.entryId);
-		if (!entry) throw new Error("Eintrag nicht gefunden");
+		if (!entry) throw new Error('Eintrag nicht gefunden');
 		const profile = await ctx.db.get(entry.djProfileId);
 		if (!profile || profile.userId !== ctx.user._id) {
-			throw new Error("Keine Berechtigung");
+			throw new Error('Keine Berechtigung');
 		}
 		await ctx.db.patch(args.entryId, {
-			status: args.accept ? "active" : "ended"
+			status: args.accept ? 'active' : 'ended'
 		});
 		const org = await ctx.db.get(entry.managementId);
 		if (org) {
 			const owners = await ctx.db
-				.query("memberships")
-				.withIndex("by_org", (q) => q.eq("organizationId", org._id))
+				.query('memberships')
+				.withIndex('by_org', (q) => q.eq('organizationId', org._id))
 				.take(20);
 			for (const member of owners) {
-				if (member.role === "owner") {
+				if (member.role === 'owner') {
 					await notify(
 						ctx,
 						member.userId,
-						args.accept ? "Roster bestätigt" : "Roster abgelehnt",
-						`${profile.stageName} hat die Einladung ${args.accept ? "angenommen" : "abgelehnt"}.`,
-						"/app/roster"
+						args.accept ? 'Roster bestätigt' : 'Roster abgelehnt',
+						`${profile.stageName} hat die Einladung ${args.accept ? 'angenommen' : 'abgelehnt'}.`,
+						'/app/roster'
 					);
 				}
 			}
