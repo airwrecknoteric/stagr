@@ -1,11 +1,11 @@
-import { v } from "convex/values";
-import { authedMutation, authedQuery } from "./lib/customFunctions";
+import { v } from 'convex/values';
+import { onboardedMutation, onboardedQuery } from './lib/customFunctions';
 
-export const list = authedQuery({
+export const list = onboardedQuery({
 	args: {},
 	returns: v.array(
 		v.object({
-			_id: v.id("notifications"),
+			_id: v.id('notifications'),
 			title: v.string(),
 			body: v.string(),
 			href: v.optional(v.string()),
@@ -15,9 +15,9 @@ export const list = authedQuery({
 	),
 	handler: async (ctx) => {
 		const items = await ctx.db
-			.query("notifications")
-			.withIndex("by_user", (q) => q.eq("userId", ctx.user._id))
-			.order("desc")
+			.query('notifications')
+			.withIndex('by_user', (q) => q.eq('userId', ctx.user._id))
+			.order('desc')
 			.take(50);
 		return items.map((item) => ({
 			_id: item._id,
@@ -30,20 +30,20 @@ export const list = authedQuery({
 	}
 });
 
-export const unreadCount = authedQuery({
+export const unreadCount = onboardedQuery({
 	args: {},
 	returns: v.number(),
 	handler: async (ctx) => {
 		const unread = await ctx.db
-			.query("notifications")
-			.withIndex("by_user_and_read", (q) => q.eq("userId", ctx.user._id).eq("read", false))
+			.query('notifications')
+			.withIndex('by_user_and_read', (q) => q.eq('userId', ctx.user._id).eq('read', false))
 			.take(50);
 		return unread.length;
 	}
 });
 
-export const markRead = authedMutation({
-	args: { id: v.optional(v.id("notifications")) },
+export const markRead = onboardedMutation({
+	args: { id: v.optional(v.id('notifications')) },
 	returns: v.null(),
 	handler: async (ctx, args) => {
 		if (args.id) {
@@ -54,8 +54,8 @@ export const markRead = authedMutation({
 			return null;
 		}
 		const unread = await ctx.db
-			.query("notifications")
-			.withIndex("by_user_and_read", (q) => q.eq("userId", ctx.user._id).eq("read", false))
+			.query('notifications')
+			.withIndex('by_user_and_read', (q) => q.eq('userId', ctx.user._id).eq('read', false))
 			.take(50);
 		for (const item of unread) {
 			await ctx.db.patch(item._id, { read: true });

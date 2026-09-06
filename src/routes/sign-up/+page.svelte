@@ -17,16 +17,14 @@
 <AuthShell>
 	{#if ready}
 		{#await import('svelte-clerk') then clerk}
-			<clerk.SignUp
-				forceRedirectUrl="/app/onboarding"
-				signInUrl="/sign-in"
-				appearance={clerkAuthAppearance}
-			/>
+			<clerk.SignUp forceRedirectUrl="/app" signInUrl="/sign-in" appearance={clerkAuthAppearance} />
 		{/await}
 	{:else}
 		<div class="rounded-3xl border border-line bg-panel p-8 text-center">
 			<h1 class="font-display text-2xl font-bold">Registrieren</h1>
-			<p class="mt-3 text-sm text-mute">{t('clerkMissing')} Setze die Keys in <code>.env.local</code>.</p>
+			<p class="mt-3 text-sm text-mute">
+				{t('clerkMissing')} Setze die Keys in <code>.env.local</code>.
+			</p>
 		</div>
 	{/if}
 </AuthShell>

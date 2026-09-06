@@ -71,17 +71,23 @@
 	{@const booking = detail.data.booking}
 	<div class="flex flex-wrap items-start justify-between gap-4">
 		<div>
-			<p class="text-xs uppercase tracking-widest text-mute">{detail.data.organizerName} → {detail.data.djName}</p>
+			<p class="text-xs tracking-widest text-mute uppercase">
+				{detail.data.organizerName} → {detail.data.djName}
+			</p>
 			<h1 class="font-display text-3xl font-bold">{booking.eventName}</h1>
-			<p class="text-mute">{formatDate(booking.eventDate)} · {booking.venueName}, {booking.venueCity}</p>
+			<p class="text-mute">
+				{formatDate(booking.eventDate)} · {booking.venueName}, {booking.venueCity}
+			</p>
 		</div>
 		<StatusBadge status={booking.status} />
 	</div>
 
 	<div class="mt-8 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
 		<section>
-			<h2 class="mb-3 text-sm uppercase tracking-widest text-mute">Chat</h2>
-			<div class="max-h-[420px] space-y-2 overflow-y-auto rounded-3xl border border-line bg-panel p-4">
+			<h2 class="mb-3 text-sm tracking-widest text-mute uppercase">Chat</h2>
+			<div
+				class="max-h-[420px] space-y-2 overflow-y-auto rounded-3xl border border-line bg-panel p-4"
+			>
 				{#if messages.results}
 					{#each [...messages.results].reverse() as message (message._id)}
 						<div class="rounded-2xl bg-stage px-3 py-2 text-sm">
@@ -98,7 +104,7 @@
 
 		<section class="space-y-6">
 			<div class="rounded-3xl border border-line p-4">
-				<h2 class="text-sm uppercase tracking-widest text-mute">Angebot</h2>
+				<h2 class="text-sm tracking-widest text-mute uppercase">Angebot</h2>
 				<div class="mt-3 flex gap-2">
 					<input type="number" bind:value={fee} />
 					<input bind:value={hospitality} />
@@ -117,7 +123,7 @@
 			</div>
 
 			<div class="rounded-3xl border border-line p-4">
-				<h2 class="text-sm uppercase tracking-widest text-mute">Status</h2>
+				<h2 class="text-sm tracking-widest text-mute uppercase">Status</h2>
 				<div class="mt-3 flex flex-wrap gap-2">
 					<Button variant="ghost" onclick={() => setStatus({ bookingId, status: 'declined' })}
 						>Ablehnen</Button
@@ -132,7 +138,7 @@
 			</div>
 
 			<div class="rounded-3xl border border-line p-4">
-				<h2 class="text-sm uppercase tracking-widest text-mute">Vertrag</h2>
+				<h2 class="text-sm tracking-widest text-mute uppercase">Vertrag</h2>
 				<FileUpload
 					label="PDF hochladen"
 					accept="application/pdf"
@@ -163,7 +169,7 @@
 			</div>
 
 			<div class="rounded-3xl border border-line p-4">
-				<h2 class="text-sm uppercase tracking-widest text-mute">Zahlung</h2>
+				<h2 class="text-sm tracking-widest text-mute uppercase">Zahlung</h2>
 				<div class="mt-3 flex gap-2">
 					<Button onclick={() => pay('deposit')}>30% Anzahlung</Button>
 					<Button variant="ghost" onclick={() => pay('remainder')}>Rest</Button>
@@ -182,7 +188,7 @@
 
 			{#if booking.status === 'completed' && !myReview.data}
 				<div class="rounded-3xl border border-line p-4">
-					<h2 class="text-sm uppercase tracking-widest text-mute">Review</h2>
+					<h2 class="text-sm tracking-widest text-mute uppercase">Review</h2>
 					<input type="number" min="1" max="5" bind:value={rating} />
 					<textarea bind:value={reviewText} rows="3"></textarea>
 					<Button
@@ -198,7 +204,7 @@
 			{/if}
 
 			<div class="rounded-3xl border border-line p-4">
-				<h2 class="text-sm uppercase tracking-widest text-mute">Dispute</h2>
+				<h2 class="text-sm tracking-widest text-mute uppercase">Dispute</h2>
 				{#if disputes.data}
 					<ul class="mt-2 space-y-1 text-sm text-mute">
 						{#each disputes.data as item (item._id)}
@@ -206,7 +212,11 @@
 						{/each}
 					</ul>
 				{/if}
-				<textarea bind:value={disputeReason} rows="2" placeholder="Was ist schiefgelaufen?" class="mt-3"></textarea>
+				<textarea
+					bind:value={disputeReason}
+					rows="2"
+					placeholder="Was ist schiefgelaufen?"
+					class="mt-3"></textarea>
 				<Button
 					variant="ghost"
 					onclick={() =>

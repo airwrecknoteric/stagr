@@ -31,7 +31,7 @@
 		signInUrl="/sign-in"
 		signUpUrl="/sign-up"
 		signInForceRedirectUrl="/app"
-		signUpForceRedirectUrl="/app/onboarding"
+		signUpForceRedirectUrl="/app"
 		{...data}
 	>
 		<ConvexBridge>

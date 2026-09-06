@@ -45,15 +45,22 @@
 <div class="mt-8 space-y-2">
 	{#if blocks.data}
 		{#each blocks.data as block (block._id)}
-			<div class="flex items-center justify-between rounded-2xl border border-line px-4 py-3 text-sm">
+			<div
+				class="flex items-center justify-between rounded-2xl border border-line px-4 py-3 text-sm"
+			>
 				<span>{formatDate(block.start)} – {formatDate(block.end)} · {block.kind}</span>
-				<button type="button" class="text-hot" onclick={() => remove({ id: block._id })}>Löschen</button>
+				<button type="button" class="text-hot" onclick={() => remove({ id: block._id })}
+					>Löschen</button
+				>
 			</div>
 		{/each}
 	{/if}
 	{#if bookings.data}
 		{#each bookings.data.filter((row) => row.booking.status === 'confirmed') as row (row.booking._id)}
-			<a href="/app/bookings/{row.booking._id}" class="block rounded-2xl border border-acid/30 px-4 py-3">
+			<a
+				href="/app/bookings/{row.booking._id}"
+				class="block rounded-2xl border border-acid/30 px-4 py-3"
+			>
 				{row.booking.eventName} · {formatDate(row.booking.eventDate)}
 			</a>
 		{/each}

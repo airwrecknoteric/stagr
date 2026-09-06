@@ -28,9 +28,7 @@
 		try {
 			const bookingId = await create({
 				djProfileId: dj.data.profile._id,
-				organizerOrgId: organizerOrgId
-					? (organizerOrgId as Id<'organizations'>)
-					: undefined,
+				organizerOrgId: organizerOrgId ? (organizerOrgId as Id<'organizations'>) : undefined,
 				eventName,
 				eventDate: new Date(eventDate).getTime(),
 				setLengthMinutes,
